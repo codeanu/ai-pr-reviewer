@@ -1,4 +1,4 @@
-# AI-Reviewer
+# AI-PR-Reviewer
 
 AI-based code review comments for GitHub pull request diffs.
 
