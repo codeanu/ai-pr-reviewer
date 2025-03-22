@@ -1,0 +1,68 @@
+name: Reusable AI Code Review Workflow
+
+on:
+  workflow_call:
+    inputs:
+      max_lines_per_file:
+        required: false
+        type: number
+        default: 1000
+        description: "Maximum lines per file to review"
+      skip_generated_files:
+        required: false
+        type: boolean
+        default: true
+        description: "Skip auto-generated files"
+      comment_on_unchanged_files:
+        required: false
+        type: boolean
+        default: false
+        description: "Comment on unchanged files"
+    secrets:
+      OPENAI_API_KEY:
+        required: true
+        description: "OpenAI API Key"
+      AZURE_OPENAI_API_KEY:
+        required: true
+        description: "Azure OpenAI API Key"
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install AI Code Reviewer
+        run: |
+          git clone https://github.com/GrexIt/ai-code-reviewer.git
+          cd ai-code-reviewer
+          npm ci
+          
+      - name: Run AI Code Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # OpenAI API
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Azure OpenAI API
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: "https://hiver-ai-code-review-3.openai.azure.com/"
+          AZURE_OPENAI_API_VERSION: "2024-10-21"
+          AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+          # Configuration
+          MAX_LINES_PER_FILE: ${{ inputs.max_lines_per_file }}
+          SKIP_GENERATED_FILES: ${{ inputs.skip_generated_files }}
+          COMMENT_ON_UNCHANGED_FILES: ${{ inputs.comment_on_unchanged_files }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: cd ai-code-reviewer && node src/index.js ci --model azure

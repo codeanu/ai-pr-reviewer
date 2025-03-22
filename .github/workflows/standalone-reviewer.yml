@@ -1,0 +1,49 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Checkout AI Code Reviewer
+        uses: actions/checkout@v3
+        with:
+          repository: GrexIt/ai-code-reviewer
+          path: ai-code-reviewer
+          token: ${{ secrets.GH_PAT }}
+          
+      - name: Install dependencies
+        run: |
+          cd ai-code-reviewer
+          npm install
+          
+      - name: Run AI Code Review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # OpenAI API (if using OpenAI)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Azure OpenAI API (if using Azure)
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: "https://hiver-ai-code-review-3.openai.azure.com/"
+          AZURE_OPENAI_API_VERSION: "2024-10-21"
+          AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+          # General configuration
+          MAX_LINES_PER_FILE: 1000
+          SKIP_GENERATED_FILES: true
+        run: cd ai-code-reviewer && node src/index.js ci --model azure --repo ${{ github.repository }} --pr ${{ github.event.pull_request.number }}
