@@ -1,6 +1,6 @@
 # AI-PR-Reviewer
 
-AI-based code review comments for GitHub pull request diffs.
+AI code review comments for GitHub pull requests
 
 ## Features
 
